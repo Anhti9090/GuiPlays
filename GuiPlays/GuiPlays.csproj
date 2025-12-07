@@ -2,10 +2,26 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework> 
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <PublishSingleFile>true</PublishSingleFile>
+
+    <SelfContained>true</SelfContained>
+
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <Authors>Cuong</Authors>
+    <Company>CuongOne</Company>
+    <Product>CuongPlayer Launcher</Product>
+    <Description>Trình mở video từ trình duyệt qua giao thức riêng</Description>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+
+    </PropertyGroup>
 
 </Project>
