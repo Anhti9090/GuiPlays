@@ -1,36 +1,93 @@
 ﻿using Microsoft.Win32;
+using System.IO.Pipes;
+using System.Text;
 
 namespace GuiPlays
 {
     internal static class Program
     {
+        //public static Form1 MainForm;
         [STAThread]
         static void Main(string[] args)
         {
-            RegisterProtocol();
-            ApplicationConfiguration.Initialize();
-            Application.Run(new Form1(args));
-        }
-        private static void RegisterProtocol()
-        {
-            string exePath = Application.ExecutablePath;
+            bool createdNew;
+            using Mutex mutex = new Mutex(true, "CuongPlayer_SingleInstance", out createdNew);
 
-            RegistryKey key = Registry.ClassesRoot.OpenSubKey("cuongplayer");
-            if (key != null)
+            if (!createdNew)
             {
-                key.Close();
+                if (args.Length > 0)
+                {
+                    try
+                    {
+                        using var client = new NamedPipeClientStream(".", "CuongPlayerPipe", PipeDirection.Out);
+                        client.Connect(300);
+                        byte[] msg = Encoding.UTF8.GetBytes(args[0]);
+                        client.Write(msg, 0, msg.Length);
+                    }
+                    catch { }
+                }
                 return;
             }
 
-            key = Registry.ClassesRoot.CreateSubKey("cuongplayer");
-            key.SetValue("", "URL: MyApp Protocol");
-            key.SetValue("URL Protocol", "");
+            ApplicationConfiguration.Initialize();
 
-            var iconKey = key.CreateSubKey("DefaultIcon");
-            iconKey.SetValue("", exePath + ",1");
+            try
+            {
+                RegisterProtocolHKCU("cuongplayer");
+            }
+            catch { }
 
-            var commandKey = key.CreateSubKey(@"shell\open\command");
-            commandKey.SetValue("", $"\"{exePath}\" \"%1\"");
+            Form1 form1 = new Form1(args);
+
+            Thread pipeThread = new Thread(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        using var server = new NamedPipeServerStream("CuongPlayerPipe", PipeDirection.In);
+                        server.WaitForConnection();
+
+                        using StreamReader reader = new StreamReader(server);
+                        string incoming = reader.ReadToEnd();
+
+                        if (!string.IsNullOrWhiteSpace(incoming))
+                        {
+                            form1.ReceiveExternalUrl(incoming);
+                        }
+                    }
+                    catch { }
+                }
+            });
+
+            pipeThread.IsBackground = true;
+            pipeThread.Start();
+
+            Application.Run(form1);
+        }
+
+
+        private static void RegisterProtocolHKCU(string proto)
+        {
+            string exePath = Application.ExecutablePath;
+
+
+            using (var baseKey = Registry.CurrentUser.CreateSubKey($"Software\\Classes\\{proto}"))
+            {
+                if (baseKey == null) return;
+                baseKey.SetValue("", $"URL: {proto} Protocol");
+                baseKey.SetValue("URL Protocol", "");
+
+                using (var iconKey = baseKey.CreateSubKey("DefaultIcon"))
+                {
+                    iconKey.SetValue("", exePath + ",1");
+                }
+
+                using (var cmdKey = baseKey.CreateSubKey("shell\\open\\command"))
+                {
+                    cmdKey.SetValue("", $"\"{exePath}\" \"%1\"");
+                }
+            }
         }
     }
 }

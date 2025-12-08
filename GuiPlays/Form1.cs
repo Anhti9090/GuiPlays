@@ -19,24 +19,37 @@ namespace GuiPlays
         }
         private void OpenVLC(string url)
         {
+            Uri uri = new Uri(url);
             string cmd;
-
-            if (url.Contains("cdn-1.cuong.one/video/"))
+            if (uri.Host == "cdn-1.cuong.one")
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
+                    string uga = $"\"{url}\"";
                     cmd = @"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe";
-                    Process.Start(cmd, $"\"{url}\"");
+                    Process.Start(cmd, uga);
                 }
             }
             else
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
+                    string uga = $"\"{url}\"";
                     cmd = @"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe";
-                    Process.Start(cmd, $"\"{url}\"");
+                    Process.Start(cmd, uga);
                 }
             }
+        }
+        public void ReceiveExternalUrl(string url)
+        {
+            if (InvokeRequired)
+            {
+                this.Invoke(new Action(() => ReceiveExternalUrl(url)));
+                return;
+            }
+
+            textBox1.Text = url.Replace("cuongplayer://", "https://");
+            OpenVLC(url);
         }
         private void button1_Click(object sender, EventArgs e)
         {
@@ -48,14 +61,14 @@ namespace GuiPlays
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            textBox1.Text = textBox1.Text.Trim();
+            textBox1.Text = textBox1.Text.Trim().Replace("cuongplayer://", "https://");
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(url))
             {
-                textBox1.Text = url;
+                textBox1.Text = url.Replace("cuongplayer://", "https://");
             }
         }
     }
